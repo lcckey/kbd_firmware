@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Userspace
+      - name: Checkout Repo
         uses: actions/checkout@v4
         with:
           token: ${{ github.token }}
@@ -47,7 +47,7 @@ jobs:
             **/*.uf2
 
   publish:
-    name: 'QMK Userspace Publish'
+    name: 'Vial QMK Publish'
     uses: qmk/.github/.github/workflows/qmk_userspace_publish.yml@main
     if: always() && !cancelled()
     needs: build
