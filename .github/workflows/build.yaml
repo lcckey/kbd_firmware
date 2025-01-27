@@ -1,0 +1,47 @@
+name: Build Binaries
+
+on:
+  push:
+    branches: [ "main", "actions" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Userspace
+        uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+          submodules: recursive
+
+      - name: Install QMK CLI
+        run: |
+          python3 -m pip install --upgrade qmk
+
+      - name: Configure QMK CLI
+        run: |
+          qmk config userspace_compile.parallel=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null)
+          qmk config user.qmk_home=$GITHUB_WORKSPACE/qmk_firmware
+
+      - name: Setup QMK
+        run: |
+          qmk setup -y -H $GITHUB_WORKSPACE/qmk_firmware
+
+      - name: Install pip dependencies
+        run: python3 -m pip install -r $GITHUB_WORKSPACE/src/vial-kb/vial-qmk/requirements.txt
+
+      - name: Build all
+        run: make vial-qmk-clean && make vial-qmk-init-all && make vial-qmk-compile-all
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        if: always() && !cancelled()
+        continue-on-error: true
+        with:
+          name: Firmware
+          path: |
+            **/*.uf2
